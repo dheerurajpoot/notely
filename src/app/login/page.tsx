@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { BookOpen } from "lucide-react";
-
+import { BookOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -15,17 +13,34 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login, getCurrentUser } from "@/lib/auth";
+import { useAuth } from "@/context/auth-context";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginPage() {
-	// If user is already logged in, redirect to dashboard
-	const user = getCurrentUser();
-	if (user) {
-		redirect("/dashboard");
-	}
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [error, setError] = useState("");
+	const { signIn, loading } = useAuth();
+	const router = useRouter();
 
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setError("");
+
+		if (!email || !password) {
+			setError("Please fill in all fields");
+			return;
+		}
+
+		const success = await signIn(email, password);
+		if (success) {
+			router.push("/dashboard");
+		}
+	};
 	return (
-		<div className='container flex h-screen w-screen flex-col items-center justify-center'>
+		<div className='container mx-auto flex h-screen w-screen flex-col items-center justify-center'>
 			<Link
 				href='/'
 				className='inline-flex items-center justify-center rounded-lg text-lg font-medium text-sky-600 mb-8'>
@@ -39,20 +54,21 @@ export default function LoginPage() {
 						Enter your email and password to access your account
 					</CardDescription>
 				</CardHeader>
-				<form
-					action={async (formData) => {
-						const result = await login(formData);
-						if (result.success) {
-							redirect("/dashboard");
-						}
-					}}>
+				<form onSubmit={handleSubmit}>
 					<CardContent className='space-y-4'>
+						{error && (
+							<Alert variant='destructive'>
+								<AlertDescription>{error}</AlertDescription>
+							</Alert>
+						)}
 						<div className='space-y-2'>
 							<Label htmlFor='email'>Email</Label>
 							<Input
 								id='email'
 								name='email'
 								type='email'
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
 								placeholder='m@example.com'
 								required
 							/>
@@ -70,14 +86,21 @@ export default function LoginPage() {
 								id='password'
 								name='password'
 								type='password'
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								placeholder='Password'
 								required
 							/>
 						</div>
 					</CardContent>
-					<CardFooter className='flex flex-col'>
+					<CardFooter className='mt-4 flex flex-col'>
 						<Button
 							type='submit'
+							disabled={loading}
 							className='w-full bg-sky-600 hover:bg-sky-700'>
+							{loading ? (
+								<Loader2 className='mr-2 h-4 w-4 animate-spin' />
+							) : null}
 							Log in
 						</Button>
 						<p className='mt-4 text-center text-sm text-muted-foreground'>

@@ -28,19 +28,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { requireAuth } from "@/lib/auth";
-import {
-	getOrdersBySeller,
-	getPhysicalOrdersBySeller,
-	updateOrder,
-	getProductById,
-} from "@/lib/db";
+
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
 
 export default function OrdersPage() {
-	const user = requireAuth();
-	const allOrders = getOrdersBySeller(user?.id || "");
-	const physicalOrders = getPhysicalOrdersBySeller(user?.id || "");
+	const { user } = useAuth();
+	const allOrders: any[] = [];
+	const physicalOrders: any[] = [];
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);

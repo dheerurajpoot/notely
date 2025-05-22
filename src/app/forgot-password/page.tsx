@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,33 +17,54 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+interface ApiResponse {
+	message: string;
+	success: boolean;
+}
 
 export default function ForgotPasswordPage() {
 	const [email, setEmail] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setIsSubmitting(true);
-		setError(null);
+		setIsLoading(true);
 
 		try {
-			// In a real app, this would call an API endpoint to send a password reset email
-			// For now, we'll simulate a successful request
-			await new Promise((resolve) => setTimeout(resolve, 1500));
+			const response = await fetch("/api/auth/forgot-password", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ email }),
+			});
+
+			const data: ApiResponse = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.message || "Something went wrong");
+			}
+
 			setIsSubmitted(true);
-		} catch (err: any) {
-			setError(err.message || "An error occurred. Please try again.");
+			setEmail("");
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				console.error(error.message);
+			} else {
+				console.error("An unexpected error occurred");
+			}
 		} finally {
-			setIsSubmitting(false);
+			setIsLoading(false);
 		}
 	};
 
 	return (
-		<div className='container flex h-screen w-screen flex-col items-center justify-center'>
+		<div className='container mx-auto flex h-screen w-screen flex-col items-center justify-center'>
 			<Link
 				href='/'
 				className='inline-flex items-center justify-center rounded-lg text-lg font-medium text-sky-600 mb-8'>
@@ -97,14 +118,16 @@ export default function ForgotPasswordPage() {
 								/>
 							</div>
 						</CardContent>
-						<CardFooter className='flex flex-col'>
+						<CardFooter className='mt-4 flex flex-col'>
 							<Button
 								type='submit'
 								className='w-full bg-sky-600 hover:bg-sky-700'
-								disabled={isSubmitting}>
-								{isSubmitting
-									? "Sending..."
-									: "Send reset link"}
+								disabled={isLoading}>
+								{isLoading ? (
+									<Loader2 className='mr-2 h-4 w-4 animate-spin' />
+								) : (
+									"Send reset link"
+								)}
 							</Button>
 							<p className='mt-4 text-center text-sm text-muted-foreground'>
 								Remember your password?{" "}

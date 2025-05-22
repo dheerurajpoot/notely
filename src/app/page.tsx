@@ -19,11 +19,10 @@ import {
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { getFeaturedProducts } from "@/lib/db";
 import { ProductCard } from "@/components/product-card";
 
 export default function Home() {
-	const featuredProducts = getFeaturedProducts();
+	const featuredProducts: any[] = [];
 
 	return (
 		<main className='flex-1'>

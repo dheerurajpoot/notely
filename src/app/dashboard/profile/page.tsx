@@ -15,11 +15,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { updateProfileAction, becomeSeller } from "@/lib/actions";
-import { UserRole } from "@/lib/models";
+import { useAuth } from "@/context/auth-context";
 
-export default function ProfilePage({ user }: { user: any }) {
+export default function ProfilePage() {
+	const { user, updateProfile } = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
+	const [formData, setFormData] = useState({
+		name: user?.name,
+		bio: user?.bio,
+	});
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		await updateProfile(formData);
+		setIsEditing(false);
+	};
 
 	return (
 		<div className='space-y-6'>
@@ -39,7 +49,7 @@ export default function ProfilePage({ user }: { user: any }) {
 							you on the platform
 						</CardDescription>
 					</CardHeader>
-					<form action={updateProfileAction}>
+					<form onSubmit={handleSubmit}>
 						<CardContent className='space-y-4'>
 							<div className='flex items-center gap-4'>
 								<div className='w-20 h-20 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 text-2xl font-semibold'>
@@ -82,29 +92,19 @@ export default function ProfilePage({ user }: { user: any }) {
 									Your email cannot be changed
 								</p>
 							</div>
-
-							<div className='space-y-2'>
-								<Label htmlFor='university'>University</Label>
-								<Input
-									id='university'
-									name='university'
-									defaultValue={user?.university || ""}
-									disabled={!isEditing}
-								/>
-							</div>
-
 							<div className='space-y-2'>
 								<Label htmlFor='bio'>Bio</Label>
 								<Textarea
 									id='bio'
 									name='bio'
+									placeholder='Write something about yourself'
 									defaultValue={user?.bio || ""}
 									disabled={!isEditing}
 									rows={4}
 								/>
 							</div>
 						</CardContent>
-						<CardFooter className='flex justify-between'>
+						<CardFooter className='mt-4 flex justify-between'>
 							{isEditing ? (
 								<>
 									<Button
@@ -163,21 +163,12 @@ export default function ProfilePage({ user }: { user: any }) {
 								<div>
 									<span className='text-sm'>
 										{new Date(
-											user?.createdAt
+											user?.createdAt || ""
 										).toLocaleDateString()}
 									</span>
 								</div>
 							</div>
 						</CardContent>
-						{user?.role === UserRole.USER && (
-							<CardFooter>
-								<form action={becomeSeller} className='w-full'>
-									<Button type='submit' className='w-full'>
-										Become a Seller
-									</Button>
-								</form>
-							</CardFooter>
-						)}
 					</Card>
 
 					<Card>

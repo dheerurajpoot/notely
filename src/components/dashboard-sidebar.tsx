@@ -17,10 +17,11 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/auth";
-import { UserRole } from "@/lib/models";
+import { useAuth } from "@/context/auth-context";
 
-export function DashboardSidebar({ user }: { user: any }) {
+export function DashboardSidebar() {
+	const { user, signOut } = useAuth();
+
 	if (!user) {
 		return null; // Don't render if user is not available
 	}
@@ -59,47 +60,37 @@ export function DashboardSidebar({ user }: { user: any }) {
 					<ShoppingCart className='h-4 w-4 text-sky-600' />
 					My Purchases
 				</Link>
-				{(user.role === UserRole.SELLER ||
-					user.role === UserRole.ADMIN) && (
-					<>
-						<div className='pt-2 pb-1'>
-							<p className='px-3 text-xs font-medium text-muted-foreground'>
-								SELLER
-							</p>
-						</div>
-						<Link
-							href='/dashboard/wallet'
-							className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
-							<Wallet className='h-4 w-4 text-sky-600' />
-							Wallet
-						</Link>
-						<Link
-							href='/dashboard/listings'
-							className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
-							<FileText className='h-4 w-4 text-sky-600' />
-							My Listings
-						</Link>
-						<Link
-							href='/dashboard/sales'
-							className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
-							<BarChart className='h-4 w-4 text-sky-600' />
-							Sales
-						</Link>
-						<Link
-							href='/dashboard/orders'
-							className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
-							<Package className='h-4 w-4 text-sky-600' />
-							Orders to Fulfill
-						</Link>
-						<Link
-							href='/dashboard/shipments'
-							className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
-							<Truck className='h-4 w-4 text-sky-600' />
-							Shipments
-						</Link>
-					</>
-				)}
-				{user.role === UserRole.ADMIN && (
+				<Link
+					href='/dashboard/wallet'
+					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
+					<Wallet className='h-4 w-4 text-sky-600' />
+					Wallet
+				</Link>
+				<Link
+					href='/dashboard/listings'
+					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
+					<FileText className='h-4 w-4 text-sky-600' />
+					My Listings
+				</Link>
+				<Link
+					href='/dashboard/sales'
+					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
+					<BarChart className='h-4 w-4 text-sky-600' />
+					Sales
+				</Link>
+				<Link
+					href='/dashboard/orders'
+					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
+					<Package className='h-4 w-4 text-sky-600' />
+					Orders to Fulfill
+				</Link>
+				<Link
+					href='/dashboard/shipments'
+					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
+					<Truck className='h-4 w-4 text-sky-600' />
+					Shipments
+				</Link>
+				{user.role === "admin" && (
 					<>
 						<div className='pt-2 pb-1'>
 							<p className='px-3 text-xs font-medium text-muted-foreground'>
@@ -133,7 +124,7 @@ export function DashboardSidebar({ user }: { user: any }) {
 				</Link>
 			</nav>
 			<div className='p-4 border-t'>
-				<form action={logout}>
+				<form action={signOut}>
 					<Button variant='outline' className='w-full' size='sm'>
 						<LogOut className='mr-2 h-4 w-4' />
 						Log out

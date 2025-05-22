@@ -31,13 +31,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { requireAuth } from "@/lib/auth";
-import { getTransactionsByUser, createPayoutRequest } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
 
 export default function WalletPage() {
-	const user = requireAuth();
-	const transactions = getTransactionsByUser(user?.id || "");
+	const { user } = useAuth();
+	const transactions: any[] = [];
 	const [payoutAmount, setPayoutAmount] = useState("");
 	const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
 	const [bankName, setBankName] = useState("");
@@ -86,13 +85,13 @@ export default function WalletPage() {
 
 		try {
 			// In a real app, this would be a server action or API call
-			createPayoutRequest({
-				userId: user?.id || "",
-				amount,
-				status: "pending",
-				paymentMethod: paymentMethod as any,
-				paymentDetails,
-			});
+			// createPayoutRequest({
+			// 	userId: user?.id || "",
+			// 	amount,
+			// 	status: "pending",
+			// 	paymentMethod: paymentMethod as any,
+			// 	paymentDetails,
+			// });
 
 			setSuccess("Payout request submitted successfully");
 			setPayoutAmount("");

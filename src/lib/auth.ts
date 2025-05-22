@@ -2,7 +2,6 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getUserByEmail, createUser } from "./db";
 import { type User, UserRole } from "./models";
 
 // In a real app, you would use a proper authentication library and secure methods
@@ -16,7 +15,7 @@ export async function login(formData: FormData) {
 		return { error: "Email and password are required" };
 	}
 
-	const user = await getUserByEmail(email);
+	const user = await getUserById(email);
 
 	if (!user || user.password !== password) {
 		return { error: "Invalid email or password" };

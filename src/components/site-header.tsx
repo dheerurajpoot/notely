@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, Menu, User, LogOut, Bell } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -13,16 +12,14 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { logout } from "@/lib/auth";
-import { UserRole } from "@/models/user";
+import { useAuth } from "@/context/auth-context";
 
-export function SiteHeader({ user }: { user: any | null }) {
-	const router = useRouter();
-
+export function SiteHeader() {
+	const { user, signOut } = useAuth();
 	return (
 		<header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
 			<div className='container mx-auto flex h-16 items-center justify-between'>
-				<div className='flex items-center gap-2'>
+				<div className='flex items-center gap-12'>
 					<Sheet>
 						<SheetTrigger asChild>
 							<Button
@@ -144,15 +141,12 @@ export function SiteHeader({ user }: { user: any | null }) {
 											My Purchases
 										</Link>
 									</DropdownMenuItem>
-									{(user.role === UserRole.SELLER ||
-										user.role === UserRole.ADMIN) && (
-										<DropdownMenuItem asChild>
-											<Link href='/dashboard/listings'>
-												My Listings
-											</Link>
-										</DropdownMenuItem>
-									)}
-									{user.role === UserRole.ADMIN && (
+									<DropdownMenuItem asChild>
+										<Link href='/dashboard/listings'>
+											My Listings
+										</Link>
+									</DropdownMenuItem>
+									{user.role === "admin" && (
 										<DropdownMenuItem asChild>
 											<Link href='/admin'>
 												Admin Panel
@@ -161,7 +155,7 @@ export function SiteHeader({ user }: { user: any | null }) {
 									)}
 									<DropdownMenuSeparator />
 									<DropdownMenuItem asChild>
-										<form action={logout}>
+										<form action={signOut}>
 											<button className='w-full text-left flex items-center'>
 												<LogOut className='mr-2 h-4 w-4' />
 												Log out

@@ -1,6 +1,8 @@
 "use client";
+
+import type React from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { BookOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,41 +15,67 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/auth-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import axios from "axios";
+import { useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 
-export default function SignupPage() {
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
+interface ApiResponse {
+	message: string;
+	success: boolean;
+}
+
+export default function ResetPasswordPage() {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-	const [error, setError] = useState("");
-	const { signUp, loading } = useAuth();
+	const [error, setError] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const [token, setToken] = useState<string | null>(null);
+
+	useEffect(() => {
+		const tokenParam = searchParams.get("token");
+		if (!tokenParam) {
+			setError("Invalid or missing reset token");
+			router.push("/forgot-password");
+		} else {
+			setToken(tokenParam);
+		}
+	}, [searchParams, router]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setError("");
+		setIsLoading(true);
+		setError(null);
 
-		if (!name || !email || !password || !confirmPassword) {
-			setError("Please fill in all fields");
-			return;
-		}
-
-		if (password !== confirmPassword) {
+		if (password.trim() !== confirmPassword.trim()) {
 			setError("Passwords do not match");
 			return;
 		}
 
-		const success = await signUp(name, email, password);
-		if (success) {
-			setTimeout(() => {
+		try {
+			const response = await axios.post("/api/auth/reset-password", {
+				headers: {
+					"Content-Type": "application/json",
+				},
+				data: { token, password: password.trim() },
+			});
+
+			const data: ApiResponse = await response.data;
+
+			if (response.data.success) {
+				toast.success(data.message || "Password reset successfully");
 				router.push("/login");
-			}, 3000);
-		} else {
-			setError("Failed to create account");
+			}
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				console.error(error.message);
+			} else {
+				console.error("An unexpected error occurred");
+			}
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -62,10 +90,11 @@ export default function SignupPage() {
 			<Card className='w-full max-w-md'>
 				<CardHeader className='space-y-1'>
 					<CardTitle className='text-2xl font-bold'>
-						Create an account
+						Reset password
 					</CardTitle>
 					<CardDescription>
-						Enter your information to create an account
+						Enter your email address and we&apos;ll send you a link
+						to reset your password
 					</CardDescription>
 				</CardHeader>
 				<form onSubmit={handleSubmit}>
@@ -76,35 +105,11 @@ export default function SignupPage() {
 							</Alert>
 						)}
 						<div className='space-y-2'>
-							<Label htmlFor='name'>Full Name</Label>
-							<Input
-								id='name'
-								name='name'
-								placeholder='John Doe'
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								required
-							/>
-						</div>
-						<div className='space-y-2'>
-							<Label htmlFor='email'>Email</Label>
-							<Input
-								id='email'
-								name='email'
-								type='email'
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								placeholder='m@example.com'
-								required
-							/>
-						</div>
-						<div className='space-y-2'>
 							<Label htmlFor='password'>Password</Label>
 							<Input
 								id='password'
-								name='password'
 								type='password'
-								placeholder='Password'
+								placeholder='Enter your password'
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
 								required
@@ -116,9 +121,8 @@ export default function SignupPage() {
 							</Label>
 							<Input
 								id='confirmPassword'
-								name='confirmPassword'
 								type='password'
-								placeholder='Confirm Password'
+								placeholder='Confirm your password'
 								value={confirmPassword}
 								onChange={(e) =>
 									setConfirmPassword(e.target.value)
@@ -127,18 +131,19 @@ export default function SignupPage() {
 							/>
 						</div>
 					</CardContent>
-					<CardFooter className='mt-5 flex flex-col'>
+					<CardFooter className='mt-4 flex flex-col'>
 						<Button
-							disabled={loading}
 							type='submit'
-							className='w-full bg-sky-600 hover:bg-sky-700'>
-							{loading ? (
+							className='w-full bg-sky-600 hover:bg-sky-700'
+							disabled={isLoading}>
+							{isLoading ? (
 								<Loader2 className='mr-2 h-4 w-4 animate-spin' />
-							) : null}
-							Sign up
+							) : (
+								"Reset Password"
+							)}
 						</Button>
 						<p className='mt-4 text-center text-sm text-muted-foreground'>
-							Already have an account?{" "}
+							Remember your password?{" "}
 							<Link
 								href='/login'
 								className='text-sky-600 hover:underline'>

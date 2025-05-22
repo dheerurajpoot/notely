@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { Edit, FileText, Plus, Trash } from "lucide-react";
 
@@ -9,48 +10,12 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { requireAuth } from "@/lib/auth";
-import { getProductsBySeller } from "@/lib/db";
-import { UserRole } from "@/lib/models";
+import { useAuth } from "@/context/auth-context";
 
 export default function ListingsPage() {
-	const user = requireAuth();
+	const { user } = useAuth();
 
-	// Ensure user is a seller
-	if (
-		!user ||
-		(user.role !== UserRole.SELLER && user.role !== UserRole.ADMIN)
-	) {
-		return (
-			<div className='space-y-6'>
-				<div>
-					<h1 className='text-3xl font-bold tracking-tight'>
-						My Listings
-					</h1>
-					<p className='text-muted-foreground'>
-						You need to be a seller to access this page
-					</p>
-				</div>
-				<Card>
-					<CardContent className='flex flex-col items-center justify-center py-6'>
-						<p className='text-center text-muted-foreground mb-4'>
-							Upgrade your account to start selling study
-							materials
-						</p>
-						<form action='/dashboard/become-seller'>
-							<Button
-								type='submit'
-								className='bg-sky-600 hover:bg-sky-700'>
-								Become a Seller
-							</Button>
-						</form>
-					</CardContent>
-				</Card>
-			</div>
-		);
-	}
-
-	const listings = getProductsBySeller(user.id);
+	const listings: any[] = [];
 
 	return (
 		<div className='space-y-6'>
