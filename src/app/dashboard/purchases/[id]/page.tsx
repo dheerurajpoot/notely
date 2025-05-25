@@ -6,17 +6,16 @@ import { ArrowLeft, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Receipt } from "@/components/receipt";
-import { requireAuth } from "@/lib/auth";
-import { getOrderById, getProductById } from "@/lib/db";
+import { useAuth } from "@/context/auth-context";
 
 export default function PurchaseReceiptPage({
 	params,
 }: {
 	params: { id: string };
 }) {
-	const user = requireAuth();
-	const order = getOrderById(params.id);
-	const product = order ? getProductById(order.productId) : null;
+	const { user } = useAuth();
+	const order: any = {};
+	const product: any = {};
 
 	if (!order || !product) {
 		return (

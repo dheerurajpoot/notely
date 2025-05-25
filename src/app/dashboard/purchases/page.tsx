@@ -22,21 +22,20 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { requireAuth } from "@/lib/auth";
-import { getOrdersByBuyer, getProductById } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
 
 export default function PurchasesPage() {
 	const searchParams = useSearchParams();
 	const success = searchParams.get("success");
 	const orderId = searchParams.get("orderId");
+	const { user } = useAuth();
 
-	const user = requireAuth();
-	const orders = getOrdersByBuyer(user?.id || "");
+	const orders: any[] = [];
 	const [searchTerm, setSearchTerm] = useState("");
 
 	const filteredOrders = orders.filter((order) => {
-		const product = getProductById(order.productId);
+		const product = {};
 		return (
 			product?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			order.id.toLowerCase().includes(searchTerm.toLowerCase())

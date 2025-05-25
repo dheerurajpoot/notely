@@ -1,29 +1,57 @@
-export enum ProductCategory {
-  NOTES = "notes",
-  ASSIGNMENTS = "assignments",
-  PAPERS = "papers",
-  LAB_FILES = "lab_files",
-  RESEARCH = "research",
-  PROJECTS = "projects",
-  SOURCE_CODE = "source_code",
-  OTHER = "other",
-}
+import mongoose from "mongoose";
 
-export interface Product {
-  id: string
-  title: string
-  description: string
-  price: number
-  category: ProductCategory
-  subject: string
-  university?: string
-  previewImage?: string
-  fileUrl?: string
-  sellerId: string
-  featured: boolean
-  approved: boolean
-  rating?: number
-  reviewCount?: number
-  createdAt: Date
-  updatedAt: Date
-}
+const ProductSchema = new mongoose.Schema(
+	{
+		title: {
+			type: String,
+			required: true,
+		},
+		description: {
+			type: String,
+			required: true,
+		},
+		price: {
+			type: Number,
+			required: true,
+		},
+		category: {
+			type: String,
+			required: true,
+		},
+		subject: {
+			type: String,
+			required: true,
+		},
+		university: {
+			type: String,
+		},
+		previewImage: {
+			type: String,
+		},
+		fileUrl: {
+			type: String,
+		},
+		sellerId: {
+			type: String,
+			required: true,
+		},
+		featured: {
+			type: Boolean,
+			default: false,
+		},
+		approved: {
+			type: Boolean,
+			default: false,
+		},
+		rating: {
+			type: Number,
+		},
+		reviewCount: {
+			type: Number,
+		},
+	},
+	{ timestamps: true }
+);
+
+export const Product =
+	mongoose.models.Product || mongoose.model("Product", ProductSchema);

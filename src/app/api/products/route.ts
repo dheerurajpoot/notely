@@ -1,128 +1,72 @@
-import { type NextRequest, NextResponse } from "next/server"
-import {
-  getProducts,
-  getProductById,
-  getProductsByCategory,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "@/lib/db"
-import { getCurrentUser } from "@/lib/auth"
-import type { ProductCategory } from "@/models/product"
+import { type NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import { User } from "@/models/user";
+import { Product } from "@/models/product";
+
+const getCurrentUser = async (req: NextRequest) => {
+	const token = req.cookies.get("token")?.value;
+	if (!token) {
+		return NextResponse.json({
+			success: false,
+			message: "No token found",
+		});
+	}
+
+	const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+		userId: string;
+	};
+	const user = await User.findById(decoded.userId).select("-password");
+	if (!user) {
+		return NextResponse.json({
+			success: false,
+			message: "User not found",
+		});
+	}
+
+	return user;
+};
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const id = searchParams.get("id")
-  const category = searchParams.get("category") as ProductCategory | null
+	const { searchParams } = new URL(request.url);
+	const id = searchParams.get("id");
 
-  if (id) {
-    const product = getProductById(id)
-    if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 })
-    }
-    return NextResponse.json(product)
-  }
-
-  if (category) {
-    const products = getProductsByCategory(category)
-    return NextResponse.json(products)
-  }
-
-  const products = getProducts()
-  return NextResponse.json(products)
+	return NextResponse.json({ id });
 }
 
 export async function POST(request: NextRequest) {
-  const user = getCurrentUser()
+	const data = await request.json();
+	const { title, description, price, category, subject, university } = data;
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+	if (!title || !description || isNaN(price) || !category || !subject) {
+		return NextResponse.json(
+			{ error: "All required fields must be filled" },
+			{ status: 400 }
+		);
+	}
 
-  const data = await request.json()
-  const { title, description, price, category, subject, university } = data
+	const user = await getCurrentUser(request);
 
-  if (!title || !description || isNaN(price) || !category || !subject) {
-    return NextResponse.json({ error: "All required fields must be filled" }, { status: 400 })
-  }
+	if (!user) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
 
-  const newProduct = createProduct({
-    title,
-    description,
-    price: Number(price),
-    category,
-    subject,
-    university,
-    sellerId: user.id,
-    featured: false,
-    approved: false,
-  })
+	const newProduct = {
+		title,
+		description,
+		price: Number(price),
+		category,
+		subject,
+		university,
+		sellerId: user.id,
+		featured: false,
+		approved: false,
+	};
 
-  return NextResponse.json({ success: true, product: newProduct })
+	const product = await Product.create(newProduct);
+
+	return NextResponse.json({ success: true, product });
 }
 
-export async function PUT(request: NextRequest) {
-  const user = getCurrentUser()
+export async function PUT(request: NextRequest) {}
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const data = await request.json()
-  const { id, title, description, price, category, subject, university } = data
-
-  if (!id) {
-    return NextResponse.json({ error: "Product ID is required" }, { status: 400 })
-  }
-
-  const product = getProductById(id)
-
-  if (!product) {
-    return NextResponse.json({ error: "Product not found" }, { status: 404 })
-  }
-
-  if (product.sellerId !== user.id && user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-  }
-
-  const updatedProduct = updateProduct(id, {
-    ...(title && { title }),
-    ...(description && { description }),
-    ...(price && { price: Number(price) }),
-    ...(category && { category }),
-    ...(subject && { subject }),
-    ...(university && { university }),
-    updatedAt: new Date(),
-  })
-
-  return NextResponse.json({ success: true, product: updatedProduct })
-}
-
-export async function DELETE(request: NextRequest) {
-  const user = getCurrentUser()
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const { searchParams } = new URL(request.url)
-  const id = searchParams.get("id")
-
-  if (!id) {
-    return NextResponse.json({ error: "Product ID is required" }, { status: 400 })
-  }
-
-  const product = getProductById(id)
-
-  if (!product) {
-    return NextResponse.json({ error: "Product not found" }, { status: 404 })
-  }
-
-  if (product.sellerId !== user.id && user.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-  }
-
-  const deletedProduct = deleteProduct(id)
-
-  return NextResponse.json({ success: true, product: deletedProduct })
-}
+export async function DELETE(request: NextRequest) {}
