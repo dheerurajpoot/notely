@@ -23,29 +23,53 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createProductAction } from "@/lib/actions";
-import { ProductCategory } from "@/lib/models";
+import axios from "axios";
+import toast from "react-hot-toast";
+
+enum ProductCategory {
+	NOTES = "notes",
+	ASSIGNMENTS = "assignments",
+	PAPERS = "papers",
+	LAB_FILES = "lab_files",
+	RESEARCH = "research",
+	PROJECTS = "projects",
+	SOURCE_CODE = "source_code",
+	BOOKS = "books",
+	OTHER = "other",
+}
 
 export default function NewListingPage() {
 	const router = useRouter();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const handleSubmit = async (formData: FormData) => {
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
 		setIsSubmitting(true);
 
 		try {
-			const result = await createProductAction(formData);
+			const formData = new FormData(e.currentTarget);
+			const result = await axios.post("/api/products/product", formData, {
+				headers: {
+					"Content-Type": "multipart/form-data",
+				},
+			});
 
-			if (result.error) {
-				alert(result.error);
-				setIsSubmitting(false);
+			if (result.data.success) {
+				toast.success(
+					result.data.message || "Listing created successfully"
+				);
+				router.push("/dashboard/listings");
 				return;
 			}
 
-			router.push("/dashboard/listings");
-		} catch (error) {
-			console.error(error);
-			alert("An error occurred while creating the listing");
+			toast.error(result.data.error || "Failed to create listing");
+		} catch (error: any) {
+			console.error("Error creating listing:", error);
+			toast.error(
+				error.response?.data?.error ||
+					"An error occurred while creating the listing"
+			);
+		} finally {
 			setIsSubmitting(false);
 		}
 	};
@@ -63,7 +87,7 @@ export default function NewListingPage() {
 			</div>
 
 			<Card>
-				<form action={handleSubmit}>
+				<form onSubmit={handleSubmit}>
 					<CardHeader>
 						<CardTitle>Listing Details</CardTitle>
 						<CardDescription>

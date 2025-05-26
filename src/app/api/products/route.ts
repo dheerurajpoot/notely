@@ -1,70 +1,98 @@
 import { type NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
-import { User } from "@/models/user";
+import { getCurrentUser } from "@/lib/utils";
 import { Product } from "@/models/product";
 
-const getCurrentUser = async (req: NextRequest) => {
-	const token = req.cookies.get("token")?.value;
-	if (!token) {
-		return NextResponse.json({
-			success: false,
-			message: "No token found",
-		});
-	}
-
-	const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-		userId: string;
-	};
-	const user = await User.findById(decoded.userId).select("-password");
-	if (!user) {
-		return NextResponse.json({
-			success: false,
-			message: "User not found",
-		});
-	}
-
-	return user;
-};
-
+// get all products
 export async function GET(request: NextRequest) {
-	const { searchParams } = new URL(request.url);
-	const id = searchParams.get("id");
-
-	return NextResponse.json({ id });
-}
-
-export async function POST(request: NextRequest) {
-	const data = await request.json();
-	const { title, description, price, category, subject, university } = data;
-
-	if (!title || !description || isNaN(price) || !category || !subject) {
+	try {
+		const user = await getCurrentUser(request);
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 }
+			);
+		}
+		if (user.role === "admin") {
+			const products = await Product.find();
+			return NextResponse.json({
+				success: true,
+				products,
+			});
+		}
+		const products = await Product.find({ sellerId: user._id });
+		return NextResponse.json({
+			success: true,
+			products,
+		});
+	} catch (error) {
+		console.error("Error fetching products:", error);
 		return NextResponse.json(
-			{ error: "All required fields must be filled" },
-			{ status: 400 }
+			{ error: "Failed to fetch products" },
+			{ status: 500 }
 		);
 	}
+}
 
-	const user = await getCurrentUser(request);
+// add a new product
+export async function POST(request: NextRequest) {
+	try {
+		const formData = await request.formData();
+		const title = formData.get("title") as string;
+		const description = formData.get("description") as string;
+		const price = formData.get("price") as string;
+		const category = formData.get("category") as string;
+		const subject = formData.get("subject") as string;
+		const university = formData.get("university") as string;
+		const file = formData.get("file") as File;
+		const preview = formData.get("preview") as File;
 
-	if (!user) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		if (!title || !description || !price || !category || !subject) {
+			return NextResponse.json(
+				{ error: "All required fields must be filled" },
+				{ status: 400 }
+			);
+		}
+
+		const user = await getCurrentUser(request);
+
+		if (!user) {
+			return NextResponse.json(
+				{ error: "Unauthorized" },
+				{ status: 401 }
+			);
+		}
+
+		// TODO: Upload files to storage service and get URLs
+		// For now, we'll just store the file names
+		const fileUrl = file ? file.name : null;
+		const previewImage = preview ? preview.name : null;
+
+		const newProduct = {
+			title,
+			description,
+			price: Number(price),
+			category,
+			subject,
+			university,
+			sellerId: user._id,
+			fileUrl,
+			previewImage,
+		};
+
+		const product = await Product.create(newProduct);
+
+		return NextResponse.json({
+			success: true,
+			product,
+			message: "Product created successfully",
+		});
+	} catch (error) {
+		console.error("Error creating product:", error);
+		return NextResponse.json(
+			{ error: "Failed to create product" },
+			{ status: 500 }
+		);
 	}
-
-	const newProduct = {
-		title,
-		description,
-		price: Number(price),
-		category,
-		subject,
-		university,
-		sellerId: user.id,
-		featured: false,
-		approved: false,
-	};
-
-	const product = await Product.create(newProduct);
-
-	return NextResponse.json({ success: true, product });
 }
 
 export async function PUT(request: NextRequest) {}

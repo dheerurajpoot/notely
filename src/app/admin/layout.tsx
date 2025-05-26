@@ -1,19 +1,19 @@
-import type React from "react"
-import { AdminSidebar } from "@/components/ui-components"
-import { requireAdmin } from "@/lib/auth"
+import type React from "react";
+import { requireAdmin } from "@/lib/auth";
+import { AdminSidebar } from "@/components/admin-sidebar";
 
 export default function AdminLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode
+	children: React.ReactNode;
 }) {
-  // This will redirect if not an admin
-  requireAdmin()
+	// This will redirect if not an admin
+	requireAdmin();
 
-  return (
-    <div className="flex">
-      <AdminSidebar />
-      <div className="flex-1 p-6">{children}</div>
-    </div>
-  )
+	return (
+		<div className='flex'>
+			<AdminSidebar />
+			<div className='flex-1 p-6'>{children}</div>
+		</div>
+	);
 }

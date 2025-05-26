@@ -6,12 +6,10 @@ import {
 	LayoutDashboard,
 	Users,
 	ShoppingBag,
-	Settings,
 	HelpCircle,
 	LogOut,
 	Wallet,
 	Truck,
-	BarChart,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -90,26 +88,6 @@ export function AdminSidebar() {
 					}`}>
 					<Wallet className='h-4 w-4 text-sky-600' />
 					Payouts
-				</Link>
-				<Link
-					href='/admin/analytics'
-					className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium ${
-						isActive("/admin/analytics")
-							? "bg-sky-50 text-sky-600"
-							: "hover:bg-sky-50"
-					}`}>
-					<BarChart className='h-4 w-4 text-sky-600' />
-					Analytics
-				</Link>
-				<Link
-					href='/admin/settings'
-					className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium ${
-						isActive("/admin/settings")
-							? "bg-sky-50 text-sky-600"
-							: "hover:bg-sky-50"
-					}`}>
-					<Settings className='h-4 w-4 text-sky-600' />
-					Settings
 				</Link>
 				<div className='pt-2 pb-1'>
 					<p className='px-3 text-xs font-medium text-muted-foreground'>

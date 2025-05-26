@@ -11,11 +11,41 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
+import { useState } from "react";
+import axios from "axios";
+import { useEffect } from "react";
 
 export default function ListingsPage() {
 	const { user } = useAuth();
 
-	const listings: any[] = [];
+	const [listings, setListings] = useState<any[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchListings = async () => {
+			try {
+				const response = await axios.get("/api/products/");
+				setListings(response.data.products);
+				setLoading(false);
+			} catch (error) {
+				console.error("Error fetching listings:", error);
+				setLoading(false);
+			}
+		};
+
+		fetchListings();
+	}, []);
+
+	const deleteProduct = async (productId: string) => {
+		try {
+			await axios.delete(`/api/products/product?productId=${productId}`);
+			setListings((prevListings) =>
+				prevListings.filter((product) => product._id !== productId)
+			);
+		} catch (error) {
+			console.error("Error deleting product:", error);
+		}
+	};
 
 	return (
 		<div className='space-y-6'>
@@ -36,10 +66,10 @@ export default function ListingsPage() {
 				</Button>
 			</div>
 
-			{listings.length > 0 ? (
+			{!loading && listings.length > 0 ? (
 				<div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
-					{listings.map((product) => (
-						<Card key={product.id}>
+					{listings.map((product, index) => (
+						<Card key={index}>
 							<div className='aspect-video relative overflow-hidden'>
 								<img
 									src={
@@ -90,6 +120,9 @@ export default function ListingsPage() {
 												</Link>
 											</Button>
 											<Button
+												onClick={() => {
+													deleteProduct(product._id);
+												}}
 												size='sm'
 												variant='destructive'>
 												<Trash className='h-3 w-3 mr-1' />

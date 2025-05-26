@@ -49,7 +49,7 @@ export function middleware(request: NextRequest) {
 		}
 
 		// Check if user has admin role
-		if (userRole !== "ADMIN") {
+		if (userRole !== "admin") {
 			return NextResponse.redirect(new URL("/dashboard", request.url));
 		}
 	}
