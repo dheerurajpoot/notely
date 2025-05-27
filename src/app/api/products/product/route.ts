@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { Product } from "@/models/product";
 import { getCurrentUser } from "@/lib/utils";
+import { connectDb } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
 	try {
+		await connectDb();
 		const formData = await request.formData();
 		const title = formData.get("title") as string;
 		const description = formData.get("description") as string;
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
 // update a product
 export async function PUT(request: NextRequest) {
 	try {
+		await connectDb();
 		const formData = await request.formData();
 		const productId = formData.get("productId") as string;
 		const title = formData.get("title") as string;
@@ -128,6 +131,7 @@ export async function PUT(request: NextRequest) {
 // delete a product
 export async function DELETE(request: NextRequest) {
 	try {
+		await connectDb();
 		const productId = request.nextUrl.searchParams.get("productId");
 
 		if (!productId) {
@@ -164,7 +168,8 @@ export async function DELETE(request: NextRequest) {
 // get a product
 export async function GET(request: NextRequest) {
 	try {
-		const productId = request.nextUrl.searchParams.get("productId");
+		await connectDb();
+		const productId = request.nextUrl.searchParams.get("id");
 
 		if (!productId) {
 			return NextResponse.json(
@@ -173,7 +178,7 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
-		const product = await Product.findById(productId);
+		const product = await Product.findById(productId).populate("sellerId");
 
 		if (!product) {
 			return NextResponse.json(

@@ -22,11 +22,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
-import { getPayoutRequests, updatePayoutRequest, getUserById } from "@/lib/db";
 
 export default function AdminPayoutsPage() {
 	const { user } = useAuth();
-	const allPayoutRequests = getPayoutRequests();
+	const allPayoutRequests: PayoutRequest[] = [];
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [processingId, setProcessingId] = useState<string | null>(null);
@@ -44,12 +43,12 @@ export default function AdminPayoutsPage() {
 		(pr) => pr.status === "rejected"
 	);
 
-	const filteredPayouts = allPayoutRequests.filter((pr) => {
-		const requester = getUserById(pr.userId);
+	const filteredPayouts = allPayoutRequests.filter((pr: PayoutRequest) => {
+		const { requester } = pr;
 		return (
-			requester?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			pr.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			pr.userId.toLowerCase().includes(searchTerm.toLowerCase())
+			(requester?.name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+			(pr.id?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
+			(pr.userId?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
 		);
 	});
 
@@ -62,7 +61,7 @@ export default function AdminPayoutsPage() {
 
 		try {
 			// In a real app, this would be a server action or API call
-			updatePayoutRequest(id, { status });
+			// updatePayoutRequest(id, { status });
 			// Force a re-render by setting state
 			setTimeout(() => {
 				setIsProcessing(false);
@@ -257,19 +256,38 @@ export default function AdminPayoutsPage() {
 	);
 }
 
+interface PayoutRequest {
+	id: string;
+	status: "pending" | "processing" | "completed" | "rejected";
+	createdAt: string;
+	amount: number;
+	paymentMethod: "bank_transfer" | "paypal";
+	paymentDetails: {
+		bankName?: string;
+		accountNumber?: string;
+		routingNumber?: string;
+		paypalEmail?: string;
+	};
+	userId: string;
+	requester?: {
+		name?: string;
+		email?: string;
+	};
+}
+
 function PayoutRequestCard({
 	payout,
 	onUpdateStatus,
 	isProcessing,
 }: {
-	payout: any;
+	payout: PayoutRequest;
 	onUpdateStatus: (
 		id: string,
 		status: "processing" | "completed" | "rejected"
 	) => void;
 	isProcessing: boolean;
 }) {
-	const requester = getUserById(payout.userId);
+	const { requester } = payout;
 
 	return (
 		<Card>
@@ -280,7 +298,7 @@ function PayoutRequestCard({
 							Payout Request #{payout.id.slice(0, 8)}
 						</CardTitle>
 						<CardDescription>
-							Requested on {formatDate(payout.createdAt)}
+							Requested on {formatDate(new Date(payout.createdAt))}
 						</CardDescription>
 					</div>
 					<PayoutStatusBadge status={payout.status} />

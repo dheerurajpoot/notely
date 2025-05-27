@@ -8,10 +8,10 @@ import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getProducts, getProductsByCategory } from "@/lib/db";
 import type { ProductCategory } from "@/lib/models";
 import { ProductCard } from "@/components/product-card";
 import { CategoryFilter } from "@/components/category-filter";
+import axios from "axios";
 
 export default function BrowsePage() {
 	const searchParams = useSearchParams();
@@ -19,40 +19,63 @@ export default function BrowsePage() {
 		"category"
 	) as ProductCategory | null;
 
-	const [products, setProducts] = useState(getProducts());
+	const [products, setProducts] = useState<any[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] =
 		useState<ProductCategory | null>(initialCategory);
 
+	const getProducts = async () => {
+		const response = await axios.get("/api/products/browse");
+		const data = await response.data.products;
+		return data;
+	};
+
+	const getProductsByCategory = async (category: ProductCategory) => {
+		const response = await axios.get(
+			`/api/products/browse?category=${category}`
+		);
+		const data = await response.data.products;
+		return data;
+	};
+
 	useEffect(() => {
 		if (selectedCategory) {
-			setProducts(getProductsByCategory(selectedCategory));
+			getProductsByCategory(selectedCategory).then((data) => {
+				setProducts(data);
+			});
 		} else {
-			setProducts(getProducts());
+			getProducts().then((data) => {
+				setProducts(data);
+			});
 		}
 	}, [selectedCategory]);
 
-	const handleSearch = (e: React.FormEvent) => {
+	const handleSearch = async (e: React.FormEvent) => {
 		e.preventDefault();
 
 		if (!searchQuery.trim()) {
 			if (selectedCategory) {
-				setProducts(getProductsByCategory(selectedCategory));
+				getProductsByCategory(selectedCategory).then((data) => {
+					setProducts(data);
+				});
 			} else {
-				setProducts(getProducts());
+				getProducts().then((data) => {
+					setProducts(data);
+				});
 			}
 			return;
 		}
 
 		const query = searchQuery.toLowerCase();
-		const filtered = getProducts().filter(
-			(product) =>
-				product.title.toLowerCase().includes(query) ||
-				product.description.toLowerCase().includes(query) ||
-				product.subject.toLowerCase().includes(query)
-		);
-
-		setProducts(filtered);
+		getProducts().then((data) => {
+			const filtered = data.filter(
+				(product: any) =>
+					product.title.toLowerCase().includes(query) ||
+					product.description.toLowerCase().includes(query) ||
+					product.subject.toLowerCase().includes(query)
+			);
+			setProducts(filtered);
+		});
 	};
 
 	return (
@@ -123,7 +146,7 @@ export default function BrowsePage() {
 						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
 							{products.map((product) => (
 								<ProductCard
-									key={product.id}
+									key={product._id}
 									product={product as any}
 								/>
 							))}

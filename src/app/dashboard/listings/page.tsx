@@ -10,14 +10,11 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/context/auth-context";
 import { useState } from "react";
 import axios from "axios";
 import { useEffect } from "react";
 
 export default function ListingsPage() {
-	const { user } = useAuth();
-
 	const [listings, setListings] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -70,7 +67,10 @@ export default function ListingsPage() {
 				<div className='grid gap-6 md:grid-cols-2 lg:grid-cols-3'>
 					{listings.map((product, index) => (
 						<Card key={index}>
-							<div className='aspect-video relative overflow-hidden'>
+							<Link
+								href={`/product/${product._id}`}
+								className='aspect-video relative overflow-hidden'
+								target='_blank'>
 								<img
 									src={
 										product.previewImage ||
@@ -81,15 +81,15 @@ export default function ListingsPage() {
 								/>
 								<div className='absolute top-2 right-2 flex gap-2'>
 									<div className='bg-sky-600 text-white px-2 py-1 rounded-md text-xs font-medium'>
-										${product.price.toFixed(2)}
+										₹{product.price.toFixed(2)}
 									</div>
 									{!product.approved && (
 										<div className='bg-amber-500 text-white px-2 py-1 rounded-md text-xs font-medium'>
-											Pending
+											In Review
 										</div>
 									)}
 								</div>
-							</div>
+							</Link>
 							<CardContent className='p-4'>
 								<div className='space-y-2'>
 									<div className='flex items-center gap-2'>
@@ -100,9 +100,13 @@ export default function ListingsPage() {
 											{product.subject}
 										</div>
 									</div>
-									<h3 className='font-semibold text-lg line-clamp-1'>
-										{product.title}
-									</h3>
+									<Link
+										href={`/product/${product._id}`}
+										target='_blank'>
+										<h3 className='font-semibold text-lg line-clamp-1'>
+											{product.title}
+										</h3>
+									</Link>
 									<p className='text-sm text-muted-foreground line-clamp-2'>
 										{product.description}
 									</p>
@@ -114,7 +118,7 @@ export default function ListingsPage() {
 												variant='outline'
 												asChild>
 												<Link
-													href={`/dashboard/listings/${product.id}/edit`}>
+													href={`/dashboard/listings/${product._id}/edit`}>
 													<Edit className='h-3 w-3 mr-1' />
 													Edit
 												</Link>

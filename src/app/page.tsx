@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
 	ArrowRight,
@@ -20,9 +22,28 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProductCard } from "@/components/product-card";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function Home() {
-	const featuredProducts: any[] = [];
+	const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+
+	const fetchFeaturedProducts = async () => {
+		try {
+			const response = await axios.get("/api/products/browse");
+			const data = await response.data.products;
+			setFeaturedProducts(data);
+		} catch (err: any) {
+			console.error(err.message || "An error occurred");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		fetchFeaturedProducts();
+	}, []);
 
 	return (
 		<main className='flex-1'>
@@ -237,12 +258,13 @@ export default function Home() {
 					</Button>
 				</div>
 				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-					{featuredProducts.map((product) => (
-						<ProductCard
-							key={product.id}
-							product={product as any}
-						/>
-					))}
+					{featuredProducts.map((product) =>
+						isLoading ? (
+							<ProductCard key={product._id} product={product} />
+						) : (
+							<ProductCard key={product._id} product={product} />
+						)
+					)}
 				</div>
 			</section>
 

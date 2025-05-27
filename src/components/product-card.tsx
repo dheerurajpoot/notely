@@ -4,13 +4,8 @@ import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import type { Product } from "@/models/product";
 
-interface ProductCardProps {
-	product: Product & { sellerName?: string };
-}
-
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product }: any) {
 	return (
 		<Card className='overflow-hidden transition-all hover:shadow-md'>
 			<div className='aspect-video relative overflow-hidden'>
@@ -24,7 +19,7 @@ export function ProductCard({ product }: ProductCardProps) {
 				/>
 				<div className='absolute top-2 right-2 flex gap-2'>
 					<div className='bg-sky-600 text-white px-2 py-1 rounded-md text-xs font-medium'>
-						${product.price.toFixed(2)}
+						₹{product.price.toFixed(2)}
 					</div>
 					{product.featured && (
 						<div className='bg-amber-500 text-white px-2 py-1 rounded-md text-xs font-medium'>
@@ -88,7 +83,7 @@ export function ProductCard({ product }: ProductCardProps) {
 					</div>
 				)}
 				<Button size='sm' asChild>
-					<Link href={`/product/${product.id}`}>View Details</Link>
+					<Link href={`/product/${product._id}`}>View Details</Link>
 				</Button>
 			</CardFooter>
 		</Card>

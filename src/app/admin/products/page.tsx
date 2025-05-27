@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Edit, Search } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +13,12 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ProductCategory } from "@/lib/models";
-import { Product } from "@/lib/models";
 import axios from "axios";
+import { ProductCategory } from "@/lib/models";
+import { toast } from "react-hot-toast";
 
 export default function AdminProductsPage() {
-	const [allProducts, setAllProducts] = useState<Product[]>([]);
+	const [allProducts, setAllProducts] = useState<any[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [categoryFilter, setCategoryFilter] = useState<
 		ProductCategory | "all"
@@ -41,6 +42,27 @@ export default function AdminProductsPage() {
 
 		fetchProducts();
 	}, []);
+
+	const approveProduct = async (productId: string) => {
+		try {
+			const res = await axios.put(
+				`/api/products/approve?productId=${productId}`
+			);
+			setAllProducts((prevProducts) =>
+				prevProducts.map((product) =>
+					product._id === productId
+						? { ...product, approved: true }
+						: product
+				)
+			);
+			if (res.data.success) {
+				setApprovalFilter("approved");
+				toast.success("Product approved successfully");
+			}
+		} catch (error) {
+			console.error("Error approving product:", error);
+		}
+	};
 
 	const filteredProducts = allProducts.filter((product) => {
 		const matchesSearch =
@@ -117,7 +139,7 @@ export default function AdminProductsPage() {
 							}>
 							<option value='all'>All Status</option>
 							<option value='approved'>Approved</option>
-							<option value='pending'>Pending</option>
+							<option value='pending'>In Review</option>
 						</select>
 					</div>
 
@@ -140,7 +162,11 @@ export default function AdminProductsPage() {
 									{index + 1}
 								</div>
 								<div className='col-span-3 font-medium'>
-									{product.title}
+									<Link
+										href={`/product/${product._id}`}
+										target='_blank'>
+										{product.title}
+									</Link>
 								</div>
 								<div className='col-span-2'>
 									<span className='px-2 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-medium'>
@@ -162,12 +188,15 @@ export default function AdminProductsPage() {
 										}`}>
 										{product.approved
 											? "Approved"
-											: "Pending"}
+											: "In Review"}
 									</span>
 								</div>
 								<div className='col-span-2 flex items-center gap-2'>
 									{!product.approved && (
 										<Button
+											onClick={() => {
+												approveProduct(product._id);
+											}}
 											size='sm'
 											className='bg-green-600 hover:bg-green-700'>
 											Approve

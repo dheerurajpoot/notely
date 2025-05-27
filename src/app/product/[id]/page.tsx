@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -18,30 +18,38 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReviewForm } from "@/components/review-form";
 import { PaymentButton } from "@/components/payment-button";
-import { getCurrentUser } from "@/lib/auth";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
+import axios from "axios";
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+interface PageParams {
+	id: string;
+}
+
+interface Props {
+	params: Promise<PageParams>;
+}
+
+export default function ProductPage({ params }: Props) {
+	const { id: productId } = React.use(params);
+	const { user } = useAuth();
 	const [product, setProduct] = useState<any>(null);
 	const [reviews, setReviews] = useState<any[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [currentImageIndex, setCurrentImageIndex] = useState(0);
-	const user = getCurrentUser();
 
 	useEffect(() => {
 		const fetchProductData = async () => {
 			try {
 				// Fetch product details
-				const productResponse = await fetch(
-					`/api/products?id=${params.id}`
+				const productResponse = await axios.get(
+					`/api/products/product?id=${productId}`
 				);
-
-				if (!productResponse.ok) {
+				if (!productResponse.data.success) {
 					throw new Error("Product not found");
 				}
-
-				const productData = await productResponse.json();
+				const productData = await productResponse.data.product;
 
 				// If product has no images array, create one with the preview image
 				if (
@@ -54,18 +62,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							"/placeholder.svg?height=400&width=800",
 					];
 				}
-
 				setProduct(productData);
-
-				// Fetch reviews
-				const reviewsResponse = await fetch(
-					`/api/reviews?productId=${params.id}`
-				);
-
-				if (reviewsResponse.ok) {
-					const reviewsData = await reviewsResponse.json();
-					setReviews(reviewsData);
-				}
 			} catch (err: any) {
 				setError(err.message || "An error occurred");
 			} finally {
@@ -74,24 +71,16 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 		};
 
 		fetchProductData();
-	}, [params.id]);
+	}, [productId]);
 
 	const handleReviewSubmitted = async () => {
-		// Refresh reviews
-		const reviewsResponse = await fetch(
-			`/api/reviews?productId=${params.id}`
+		// Refresh product to get updated rating
+		const productResponse = await axios.get(
+			`/api/products/product?id=${productId}`
 		);
 
-		if (reviewsResponse.ok) {
-			const reviewsData = await reviewsResponse.json();
-			setReviews(reviewsData);
-		}
-
-		// Refresh product to get updated rating
-		const productResponse = await fetch(`/api/products?id=${params.id}`);
-
-		if (productResponse.ok) {
-			const productData = await productResponse.json();
+		if (productResponse.data.success) {
+			const productData = await productResponse.data.product;
 			setProduct(productData);
 		}
 	};
@@ -126,13 +115,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 		);
 	}
 
-	if (error || !product) {
-		return notFound();
-	}
-
 	// Check if user has already reviewed this product
 	const hasReviewed =
-		user && reviews.some((review) => review.userId === user.id);
+		user && reviews.some((review) => review.userId === user._id);
 
 	// Check if user has purchased this product
 	const hasPurchased = user && true; // In a real app, check if user has purchased the product
@@ -154,16 +139,16 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						<div className='relative'>
 							<img
 								src={
-									product.images[currentImageIndex] ||
+									product?.images[currentImageIndex] ||
 									"/placeholder.svg"
 								}
-								alt={`${product.title} - Image ${
+								alt={`${product?.title} - Image ${
 									currentImageIndex + 1
 								}`}
 								className='w-full h-auto object-cover aspect-video'
 							/>
 
-							{product.images.length > 1 && (
+							{product?.images?.length > 1 && (
 								<>
 									<Button
 										variant='ghost'
@@ -190,9 +175,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						</div>
 
 						{/* Thumbnails */}
-						{product.images.length > 1 && (
+						{product?.images?.length > 1 && (
 							<div className='flex overflow-x-auto gap-2 p-2 bg-gray-50'>
-								{product.images.map(
+								{product?.images?.map(
 									(image: string, index: number) => (
 										<button
 											key={index}
@@ -219,12 +204,12 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 					<div className='bg-white rounded-lg p-6 shadow-sm'>
 						<div className='flex items-center gap-2 mb-4'>
 							<div className='bg-sky-50 text-sky-700 px-2 py-1 rounded text-xs font-medium'>
-								{product.category}
+								{product?.category}
 							</div>
 							<div className='bg-gray-50 text-gray-700 px-2 py-1 rounded text-xs font-medium'>
-								{product.subject}
+								{product?.subject}
 							</div>
-							{product.featured && (
+							{product?.featured && (
 								<div className='bg-amber-50 text-amber-700 px-2 py-1 rounded text-xs font-medium'>
 									Featured
 								</div>
@@ -232,11 +217,11 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						</div>
 
 						<h1 className='text-2xl font-bold mb-2'>
-							{product.title}
+							{product?.title}
 						</h1>
 
 						<div className='flex items-center gap-2 mb-4'>
-							{product.rating && (
+							{product?.rating && (
 								<div className='flex items-center'>
 									<div className='flex'>
 										{[1, 2, 3, 4, 5].map((star) => (
@@ -259,7 +244,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							)}
 
 							<span className='text-sm text-muted-foreground'>
-								{product.university &&
+								{product?.university &&
 									`From ${product.university}`}
 							</span>
 						</div>
@@ -278,7 +263,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							</TabsList>
 							<TabsContent value='description' className='pt-4'>
 								<p className='text-muted-foreground'>
-									{product.description}
+									{product?.description}
 								</p>
 
 								<div className='mt-6 space-y-4'>
@@ -364,7 +349,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 												Write a Review
 											</h3>
 											<ReviewForm
-												productId={product.id}
+												productId={product?._id}
 												user={user}
 												onReviewSubmitted={
 													handleReviewSubmitted
@@ -396,24 +381,25 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							<TabsContent value='seller' className='pt-4'>
 								<div className='flex items-center gap-3 mb-4'>
 									<div className='w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 font-semibold'>
-										{product.sellerId
-											.charAt(0)
-											.toUpperCase()}
+										{product?.sellerId.name
+											?.charAt(0)
+											?.toUpperCase()}
 									</div>
 									<div>
 										<p className='font-medium'>
-											Seller #{product.sellerId}
+											{product?.sellerId?.name}
 										</p>
 										<p className='text-sm text-muted-foreground'>
-											{product.university ||
-												"University not specified"}
+											{product?.sellerId.email ||
+												"Email not specified"}
 										</p>
 									</div>
 								</div>
 								<p className='text-sm text-muted-foreground'>
 									This seller has been a member since{" "}
-									{new Date().getFullYear() - 1} and has sold
-									multiple study materials on Notely.
+									{formatDateTime(product.sellerId.createdAt)}{" "}
+									and has sold multiple study materials on
+									Notely.
 								</p>
 							</TabsContent>
 						</Tabs>
@@ -425,7 +411,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 					<Card className='sticky top-20'>
 						<CardContent className='p-6'>
 							<div className='text-3xl font-bold mb-4'>
-								${product.price.toFixed(2)}
+								₹{product.price.toFixed(2)}
 							</div>
 
 							{user ? (
@@ -435,7 +421,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 									asChild
 									className='w-full mb-4 bg-sky-600 hover:bg-sky-700'>
 									<Link
-										href={`/login?redirect=/product/${product.id}`}>
+										href={`/login?redirect=/product/${product._id}`}>
 										Log in to Purchase
 									</Link>
 								</Button>
@@ -465,9 +451,13 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 								<h3 className='font-semibold mb-2'>
 									Have a question?
 								</h3>
-								<Button variant='outline' className='w-full'>
-									Contact Seller
-								</Button>
+								<Link href={`mailto:${product.sellerId.email}`}>
+									<Button
+										variant='outline'
+										className='w-full'>
+										Contact Seller
+									</Button>
+								</Link>
 							</div>
 						</CardContent>
 					</Card>

@@ -10,13 +10,15 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { requireAuth } from "@/lib/auth";
-import { getPayoutRequestsByUser } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import axios from "axios";
+import { useAuth } from "@/context/auth-context";
 
-export default function PayoutHistoryPage() {
-	const user = requireAuth();
-	const payoutRequests = getPayoutRequestsByUser(user?.id || "");
+export default async function PayoutHistoryPage() {
+	const { user } = useAuth();
+	const payoutRequests = await axios.get(
+		`/api/payout-requests?userId=${user?._id}`
+	);
 
 	return (
 		<div className='space-y-6'>
@@ -45,9 +47,9 @@ export default function PayoutHistoryPage() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{payoutRequests.length > 0 ? (
+					{payoutRequests.data.length > 0 ? (
 						<div className='space-y-4'>
-							{payoutRequests.map((payout) => (
+							{payoutRequests.data.map((payout: any) => (
 								<div
 									key={payout.id}
 									className='flex items-center justify-between border-b pb-4'>

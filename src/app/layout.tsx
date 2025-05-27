@@ -2,7 +2,6 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { getCurrentUser } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "react-hot-toast";
@@ -21,8 +20,6 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const user = getCurrentUser();
-
 	return (
 		<html lang='en' suppressHydrationWarning>
 			<body className={inter.className} suppressHydrationWarning>

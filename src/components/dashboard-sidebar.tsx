@@ -7,13 +7,11 @@ import {
 	ShoppingCart,
 	Home,
 	FileText,
-	BarChart,
 	HelpCircle,
 	MessageSquare,
 	Settings,
 	Wallet,
 	Package,
-	Truck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -73,22 +71,10 @@ export function DashboardSidebar() {
 					My Listings
 				</Link>
 				<Link
-					href='/dashboard/sales'
-					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
-					<BarChart className='h-4 w-4 text-sky-600' />
-					Sales
-				</Link>
-				<Link
 					href='/dashboard/orders'
 					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
 					<Package className='h-4 w-4 text-sky-600' />
-					Orders to Fulfill
-				</Link>
-				<Link
-					href='/dashboard/shipments'
-					className='flex items-center gap-3 px-3 py-2 rounded-md hover:bg-sky-50 text-sm font-medium'>
-					<Truck className='h-4 w-4 text-sky-600' />
-					Shipments
+					Orders
 				</Link>
 				{user.role === "admin" && (
 					<>

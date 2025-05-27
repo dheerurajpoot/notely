@@ -32,7 +32,8 @@ const ProductSchema = new mongoose.Schema(
 			type: String,
 		},
 		sellerId: {
-			type: String,
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "User",
 			required: true,
 		},
 		featured: {
@@ -54,4 +55,4 @@ const ProductSchema = new mongoose.Schema(
 );
 
 export const Product =
-	mongoose.models.Product || mongoose.model("Product", ProductSchema);
+	mongoose.models?.Product || mongoose.model("Product", ProductSchema);
