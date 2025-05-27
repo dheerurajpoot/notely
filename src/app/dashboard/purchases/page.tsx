@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -23,22 +23,74 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { useAuth } from "@/context/auth-context";
+import axios from "axios";
+
+interface Product {
+	title: string;
+	[key: string]: any;
+}
+
+interface Order {
+	_id: string;
+	productId: string;
+	status: string;
+	createdAt: string;
+	trackingNumber?: string;
+	[key: string]: any;
+}
+
+interface ProductsMap {
+	[key: string]: Product;
+}
 
 export default function PurchasesPage() {
 	const searchParams = useSearchParams();
 	const success = searchParams.get("success");
 	const orderId = searchParams.get("orderId");
-	const { user } = useAuth();
 
-	const orders: any[] = [];
+	const [orders, setOrders] = useState<Order[]>([]);
+	const [products, setProducts] = useState<ProductsMap>({});
 	const [searchTerm, setSearchTerm] = useState("");
 
+	const fetchOrders = async () => {
+		const response = await axios.get(`/api/orders`);
+		const data = await response.data;
+		if (data.success) {
+			setOrders(data.orders);
+			// Fetch products for all orders
+			const productPromises = data.orders.map((order: Order) =>
+				getProductById(order.productId.toString())
+			);
+			const productsData = await Promise.all(productPromises);
+			const productsMap: ProductsMap = {};
+			data.orders.forEach((order: Order, index: number) => {
+				if (productsData[index]) {
+					productsMap[order.productId] = productsData[index];
+				}
+			});
+			setProducts(productsMap);
+		}
+	};
+
+	useEffect(() => {
+		fetchOrders();
+	}, []);
+
+	const getProductById = async (id: string) => {
+		try {
+			const response = await axios.get(`/api/products/product?id=${id}`);
+			return response.data;
+		} catch (error) {
+			console.error("Error fetching product:", error);
+			return null;
+		}
+	};
+
 	const filteredOrders = orders.filter((order) => {
-		const product = {};
+		const product = products[order.productId];
 		return (
 			product?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			order.id.toLowerCase().includes(searchTerm.toLowerCase())
+			order._id.toLowerCase().includes(searchTerm.toLowerCase())
 		);
 	});
 
@@ -100,9 +152,9 @@ export default function PurchasesPage() {
 			{filteredOrders.length > 0 ? (
 				<div className='grid gap-6'>
 					{filteredOrders.map((order) => {
-						const product = getProductById(order.productId);
+						const product = products[order.productId];
 						return (
-							<Card key={order.id}>
+							<Card key={order._id}>
 								<CardHeader className='pb-2'>
 									<div className='flex items-center justify-between'>
 										<div>
@@ -111,7 +163,9 @@ export default function PurchasesPage() {
 											</CardTitle>
 											<CardDescription>
 												Purchased on{" "}
-												{formatDate(order.createdAt)}
+												{formatDate(
+													new Date(order.createdAt)
+												)}
 											</CardDescription>
 										</div>
 										<OrderStatusBadge
@@ -126,12 +180,10 @@ export default function PurchasesPage() {
 												Order Details
 											</h4>
 											<p className='text-sm'>
-												Order #{order.id.slice(0, 8)}
+												#{order._id}
 											</p>
 											<p className='text-sm text-muted-foreground'>
-												{order.isPhysical
-													? "Physical delivery"
-													: "Digital product"}
+												Digital product
 											</p>
 										</div>
 										<div>
@@ -141,35 +193,24 @@ export default function PurchasesPage() {
 											<p className='text-sm'>
 												{formatCurrency(order.amount)}
 											</p>
-											{order.deliveryFee && (
-												<p className='text-xs text-muted-foreground'>
-													Includes{" "}
-													{formatCurrency(
-														order.deliveryFee
-													)}{" "}
-													delivery fee
-												</p>
-											)}
 										</div>
 										<div>
 											<h4 className='text-sm font-medium mb-1'>
 												Actions
 											</h4>
 											<div className='flex flex-wrap gap-2'>
-												{!order.isPhysical && (
-													<Button
-														variant='outline'
-														size='sm'>
-														<Download className='h-4 w-4 mr-1' />
-														Download
-													</Button>
-												)}
+												{/* <Button
+													variant='outline'
+													size='sm'>
+													<Download className='h-4 w-4 mr-1' />
+													Download
+												</Button> */}
 												<Button
 													variant='outline'
 													size='sm'
 													asChild>
 													<Link
-														href={`/dashboard/purchases/${order.id}`}>
+														href={`/dashboard/purchases/${order._id}`}>
 														<FileText className='h-4 w-4 mr-1' />
 														Receipt
 													</Link>
@@ -177,45 +218,6 @@ export default function PurchasesPage() {
 											</div>
 										</div>
 									</div>
-
-									{order.isPhysical && (
-										<div className='mt-4 pt-4 border-t'>
-											<h4 className='text-sm font-medium mb-2'>
-												Shipping Status
-											</h4>
-											<div className='bg-gray-50 p-3 rounded-md'>
-												<div className='flex items-center justify-between'>
-													<div>
-														<p className='text-sm font-medium'>
-															{getShippingStatusText(
-																order.status
-															)}
-														</p>
-														{order.trackingNumber ? (
-															<p className='text-xs'>
-																Tracking:{" "}
-																{
-																	order.trackingNumber
-																}
-															</p>
-														) : (
-															<p className='text-xs text-muted-foreground'>
-																Tracking
-																information will
-																be available
-																once shipped
-															</p>
-														)}
-													</div>
-													<div className='flex-shrink-0'>
-														{getShippingStatusIcon(
-															order.status
-														)}
-													</div>
-												</div>
-											</div>
-										</div>
-									)}
 								</CardContent>
 								<CardFooter className='border-t pt-4 flex justify-between'>
 									<Button
@@ -230,7 +232,7 @@ export default function PurchasesPage() {
 									</Button>
 									<Button variant='outline' size='sm' asChild>
 										<Link
-											href={`/dashboard/purchases/${order.id}`}>
+											href={`/dashboard/purchases/${order._id}`}>
 											View Details
 										</Link>
 									</Button>
@@ -270,15 +272,8 @@ function OrderStatusBadge({ status }: { status: string }) {
 		case "processing":
 			color = "bg-blue-100 text-blue-800 hover:bg-blue-100/80";
 			break;
-		case "shipped":
-			color = "bg-purple-100 text-purple-800 hover:bg-purple-100/80";
-			break;
-		case "delivered":
 		case "completed":
 			color = "bg-green-100 text-green-800 hover:bg-green-100/80";
-			break;
-		case "refunded":
-			color = "bg-red-100 text-red-800 hover:bg-red-100/80";
 			break;
 		default:
 			color = "bg-gray-100 text-gray-800 hover:bg-gray-100/80";
@@ -289,54 +284,4 @@ function OrderStatusBadge({ status }: { status: string }) {
 			{status.charAt(0).toUpperCase() + status.slice(1)}
 		</Badge>
 	);
-}
-
-function getShippingStatusText(status: string) {
-	switch (status) {
-		case "pending":
-			return "Order received, processing soon";
-		case "processing":
-			return "Order is being processed";
-		case "shipped":
-			return "Order has been shipped";
-		case "delivered":
-			return "Order has been delivered";
-		default:
-			return "Status unknown";
-	}
-}
-
-function getShippingStatusIcon(status: string) {
-	switch (status) {
-		case "pending":
-			return (
-				<div className='w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center'>
-					<Package className='h-4 w-4 text-yellow-600' />
-				</div>
-			);
-		case "processing":
-			return (
-				<div className='w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center'>
-					<Package className='h-4 w-4 text-blue-600' />
-				</div>
-			);
-		case "shipped":
-			return (
-				<div className='w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center'>
-					<Package className='h-4 w-4 text-purple-600' />
-				</div>
-			);
-		case "delivered":
-			return (
-				<div className='w-8 h-8 rounded-full bg-green-100 flex items-center justify-center'>
-					<Package className='h-4 w-4 text-green-600' />
-				</div>
-			);
-		default:
-			return (
-				<div className='w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center'>
-					<Package className='h-4 w-4 text-gray-600' />
-				</div>
-			);
-	}
 }

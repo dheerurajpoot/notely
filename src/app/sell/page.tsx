@@ -101,7 +101,7 @@ export default function SellPage() {
 						<div className='absolute -top-8 -left-8 h-64 w-64 bg-sky-100 rounded-full blur-3xl opacity-70'></div>
 						<div className='relative bg-white rounded-xl shadow-lg overflow-hidden'>
 							<img
-								src='/placeholder.svg?height=400&width=600'
+								src='/image1.jpg'
 								alt='Student selling notes'
 								className='w-full h-auto'
 							/>

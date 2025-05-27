@@ -35,6 +35,7 @@ export default function BrowsePage() {
 			`/api/products/browse?category=${category}`
 		);
 		const data = await response.data.products;
+		console.log(data);
 		return data;
 	};
 

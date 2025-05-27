@@ -81,7 +81,7 @@ export default function Home() {
 							<div className='absolute -bottom-8 -right-8 h-72 w-72 bg-sky-200 rounded-full blur-3xl opacity-70'></div>
 							<div className='relative bg-white rounded-xl shadow-lg overflow-hidden'>
 								<img
-									src='/placeholder.svg?height=400&width=600'
+									src='/image3.jpg'
 									alt='Students using Notely'
 									className='w-full h-auto'
 								/>
@@ -511,7 +511,7 @@ export default function Home() {
 						<div className='relative'>
 							<div className='absolute -top-8 -left-8 h-64 w-64 bg-sky-100 rounded-full blur-3xl opacity-70'></div>
 							<img
-								src='/placeholder.svg?height=400&width=500'
+								src='/image2.jpg'
 								alt='Students collaborating'
 								className='relative rounded-lg shadow-lg'
 							/>

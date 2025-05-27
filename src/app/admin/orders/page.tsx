@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AlertCircle, Search } from "lucide-react";
 
 import {
@@ -23,18 +23,42 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import axios from "axios";
 
+interface Order {
+	_id: string;
+	productId: any;
+	buyerId: string;
+	sellerId: string;
+	amount: number;
+	status: string;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
 export default function OrdersPage() {
 	const { user } = useAuth();
-	const allOrders: any[] = [];
+	const [orders, setOrders] = useState<Order[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 	const [selectedOrder, setSelectedOrder] = useState<any>(null);
 	const [showOrderSlipDialog, setShowOrderSlipDialog] = useState(false);
 
-	const filteredOrders = allOrders.filter((order) =>
-		order.id.toLowerCase().includes(searchTerm.toLowerCase())
+	const fetchOrders = async () => {
+		const response = await axios.get(`/api/orders/allorders`);
+		const data = await response.data;
+		if (data.success) {
+			setOrders(data.orders);
+		}
+	};
+
+	useEffect(() => {
+		fetchOrders();
+	}, []);
+
+	const filteredOrders = orders.filter((order) =>
+		order?._id?.toLowerCase()?.includes(searchTerm.toLowerCase())
 	);
+	console.log("Orders:", orders);
 
 	const handleUpdateStatus = async (orderId: string, status: string) => {
 		setIsUpdating(true);
@@ -55,11 +79,6 @@ export default function OrdersPage() {
 			setIsUpdating(false);
 			setUpdatingOrderId(null);
 		}
-	};
-
-	const handleViewOrderSlip = (order: any) => {
-		setSelectedOrder(order);
-		setShowOrderSlipDialog(true);
 	};
 
 	return (
@@ -83,22 +102,73 @@ export default function OrdersPage() {
 			</div>
 
 			<div>
-				<div>All Orders ({allOrders.length})</div>
+				<div>All Orders ({orders.length})</div>
 
 				<div className='mt-4'>
 					{filteredOrders.length > 0 ? (
 						<div className='grid gap-4'>
-							{filteredOrders.map((order) => (
-								<OrderCard
-									key={order.id}
-									order={order}
-									onUpdateStatus={handleUpdateStatus}
-									onViewOrderSlip={handleViewOrderSlip}
-									isUpdating={
-										isUpdating &&
-										updatingOrderId === order.id
-									}
-								/>
+							{filteredOrders.map((order, index) => (
+								<Card key={index}>
+									<CardContent>
+										<CardHeader className='pb-2'>
+											<div className='flex items-center justify-between'>
+												<div>
+													<CardTitle className='text-lg'>
+														Order #
+														{order._id.slice(0, 8)}
+													</CardTitle>
+													<CardDescription>
+														Placed on{" "}
+														{formatDate(
+															order.createdAt
+														)}
+													</CardDescription>
+												</div>
+												<OrderStatusBadge
+													status={order.status}
+												/>
+											</div>
+										</CardHeader>
+										<div className='grid gap-4 md:grid-cols-3'>
+											<div>
+												<h4 className='text-sm font-medium mb-1'>
+													Product
+												</h4>
+												<p className='text-sm'>
+													{order?.productId?.title ||
+														`Product #${order.productId}`}
+												</p>
+												<p className='text-sm text-muted-foreground'>
+													Digital product
+												</p>
+											</div>
+											<div>
+												<h4 className='text-sm font-medium mb-1'>
+													Customer
+												</h4>
+												<p className='text-sm'>
+													Customer #{order.buyerId}
+												</p>
+											</div>
+											<div>
+												<h4 className='text-sm font-medium mb-1'>
+													Payment
+												</h4>
+												<p className='text-sm font-medium'>
+													{formatCurrency(
+														order.amount
+													)}
+												</p>
+												<p className='text-xs text-green-600'>
+													Your earnings:{" "}
+													{formatCurrency(
+														order.amount * 0.1
+													)}
+												</p>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
 							))}
 						</div>
 					) : (
@@ -129,75 +199,6 @@ export default function OrdersPage() {
 	);
 }
 
-async function getProductById(productId: string) {
-	const response = await axios.get(`/api/products/product?id=${productId}`);
-	return response.data;
-}
-
-async function OrderCard({
-	order,
-	onUpdateStatus,
-	onViewOrderSlip,
-	isUpdating,
-}: {
-	order: any;
-	onUpdateStatus: (orderId: string, status: string) => void;
-	onViewOrderSlip: (order: any) => void;
-	isUpdating: boolean;
-}) {
-	const product = await getProductById(order.productId);
-
-	return (
-		<Card>
-			<CardHeader className='pb-2'>
-				<div className='flex items-center justify-between'>
-					<div>
-						<CardTitle className='text-lg'>
-							Order #{order.id.slice(0, 8)}
-						</CardTitle>
-						<CardDescription>
-							Placed on {formatDate(order.createdAt)}
-						</CardDescription>
-					</div>
-					<OrderStatusBadge status={order.status} />
-				</div>
-			</CardHeader>
-			<CardContent>
-				<div className='grid gap-4 md:grid-cols-3'>
-					<div>
-						<h4 className='text-sm font-medium mb-1'>Product</h4>
-						<p className='text-sm'>
-							{product?.title || `Product #${order.productId}`}
-						</p>
-						<p className='text-sm text-muted-foreground'>
-							{order.isPhysical
-								? "Physical delivery"
-								: "Digital product"}
-						</p>
-					</div>
-					<div>
-						<h4 className='text-sm font-medium mb-1'>Customer</h4>
-						<p className='text-sm'>Customer #{order.buyerId}</p>
-					</div>
-					<div>
-						<h4 className='text-sm font-medium mb-1'>Payment</h4>
-						<p className='text-sm font-medium'>
-							{formatCurrency(order.amount)}
-						</p>
-						<p className='text-xs text-muted-foreground'>
-							Platform fee: {formatCurrency(order.platformFee)}
-						</p>
-						<p className='text-xs text-green-600'>
-							Your earnings:{" "}
-							{formatCurrency(order.sellerEarnings)}
-						</p>
-					</div>
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
-
 function OrderStatusBadge({ status }: { status: string }) {
 	let color = "";
 
@@ -220,8 +221,6 @@ function OrderStatusBadge({ status }: { status: string }) {
 }
 
 async function OrderSlip({ order }: { order: any }) {
-	const product = await getProductById(order.productId);
-
 	return (
 		<div className='p-4 border rounded-lg'>
 			<div className='flex justify-between items-center border-b pb-4 mb-4'>

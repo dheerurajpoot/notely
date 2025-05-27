@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/stats-card";
 import { useAuth } from "@/context/auth-context";
+// import axios from "axios";
 
 export default function DashboardPage() {
 	const { user } = useAuth();
